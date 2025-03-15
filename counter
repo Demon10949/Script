@@ -1,0 +1,65 @@
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+-- Создаем GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = localPlayer.PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Parent = screenGui
+frame.Size = UDim2.new(0, 200, 0, 80)
+frame.Position = UDim2.new(0.01, 0, 0.01, 0)
+frame.BackgroundColor3 = Color3.new(0.8, 0.8, 0.8)
+frame.Active = true
+frame.Draggable = true
+
+local deathCountLabel = Instance.new("TextLabel")
+deathCountLabel.Parent = frame
+deathCountLabel.Size = UDim2.new(1, 0, 0.5, 0)
+deathCountLabel.Position = UDim2.new(0, 0, 0, 0)
+deathCountLabel.BackgroundTransparency = 1
+deathCountLabel.Text = "0" -- Изменен текст
+
+local addButton = Instance.new("TextButton")
+addButton.Parent = frame
+addButton.Size = UDim2.new(1, 0, 0.5, 0)
+addButton.Position = UDim2.new(0, 0, 0.5, 0)
+addButton.Text = "+1"
+
+local deathCount = 0
+
+-- Функция для обновления счетчика смертей
+local function updateDeathCount()
+    deathCount = deathCount + 1
+    deathCountLabel.Text = tostring(deathCount) -- Изменен текст
+end
+
+-- Функция для отслеживания смерти игрока
+local function onCharacterDied(character)
+    if character.Parent == localPlayer then
+        updateDeathCount()
+    end
+end
+
+-- Отслеживаем смерть персонажа
+localPlayer.CharacterAdded:Connect(function(character)
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Died:Connect(function()
+            onCharacterDied(character)
+        end)
+    end
+end)
+
+-- Проверяем, если персонаж уже существует
+if localPlayer.Character then
+    local humanoid = localPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Died:Connect(function()
+            onCharacterDied(localPlayer.Character)
+        end)
+    end
+end
+
+-- Привязка функции к кнопке
+addButton.MouseButton1Click:Connect(updateDeathCount)
