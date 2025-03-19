@@ -1,0 +1,18 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+local canDoubleJump = true
+
+humanoid.StateChanged:Connect(function(_, state)
+    if state == Enum.HumanoidStateType.Landed then
+        canDoubleJump = true
+    end
+end)
+
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if canDoubleJump then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        canDoubleJump = false
+    end
+end)
