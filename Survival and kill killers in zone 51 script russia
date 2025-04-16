@@ -12,17 +12,13 @@ local function teleportPlayer(x, y, z)
     end
 end
 
--- Переменная для хранения элементов
-local mainFrame = nil
-local miniButton = nil
+-- Основные элементы
+local mainFrame, miniButton
 
--- Создание мини-кнопки с изображением
-local function createMinimizedButton()
-    -- Удаляем старую кнопку если есть
-    if miniButton then
-        miniButton:Destroy()
-    end
-
+-- Создание мини-кнопки
+local function createMiniButton()
+    if miniButton then miniButton:Destroy() end
+    
     miniButton = Instance.new("ImageButton")
     miniButton.Name = "MiniButton"
     miniButton.Size = UDim2.new(0, 50, 0, 50)
@@ -37,24 +33,20 @@ local function createMinimizedButton()
     miniButton.MouseEnter:Connect(function()
         miniButton.Size = UDim2.new(0, 55, 0, 55)
     end)
-    
     miniButton.MouseLeave:Connect(function()
         miniButton.Size = UDim2.new(0, 50, 0, 50)
     end)
 
     miniButton.MouseButton1Click:Connect(function()
         miniButton:Destroy()
-        createMainGUI()
+        createMainFrame()
     end)
 end
 
--- Создание основного GUI
-local function createMainGUI()
-    -- Удаляем старый фрейм если есть
-    if mainFrame then
-        mainFrame:Destroy()
-    end
-
+-- Создание основного окна
+local function createMainFrame()
+    if mainFrame then mainFrame:Destroy() end
+    
     mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, 220, 0, 160)
@@ -80,7 +72,7 @@ local function createMainGUI()
     closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
     closeButton.Parent = mainFrame
 
-    -- Кнопка ТП на спавн
+    -- Кнопки телепортов
     local spawnButton = Instance.new("TextButton")
     spawnButton.Name = "SpawnButton"
     spawnButton.Size = UDim2.new(0.9, 0, 0, 45)
@@ -89,7 +81,6 @@ local function createMainGUI()
     spawnButton.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
     spawnButton.Parent = mainFrame
 
-    -- Кнопка ТП на место
     local placeButton = Instance.new("TextButton")
     placeButton.Name = "PlaceButton"
     placeButton.Size = UDim2.new(0.9, 0, 0, 45)
@@ -101,7 +92,7 @@ local function createMainGUI()
     -- Обработчики событий
     closeButton.MouseButton1Click:Connect(function()
         mainFrame:Destroy()
-        createMinimizedButton()
+        createMiniButton()
     end)
 
     spawnButton.MouseButton1Click:Connect(function()
@@ -114,4 +105,4 @@ local function createMainGUI()
 end
 
 -- Первый запуск
-createMainGUI()
+createMainFrame()
