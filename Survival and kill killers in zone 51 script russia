@@ -12,37 +12,39 @@ local function teleportPlayer(x, y, z)
     end
 end
 
--- Переменная для хранения основного фрейма
+-- Переменная для хранения элементов
 local mainFrame = nil
+local miniButton = nil
 
 -- Создание мини-кнопки с изображением
 local function createMinimizedButton()
-    local miniButton = Instance.new("ImageButton")
+    -- Удаляем старую кнопку если есть
+    if miniButton then
+        miniButton:Destroy()
+    end
+
+    miniButton = Instance.new("ImageButton")
     miniButton.Name = "MiniButton"
-    miniButton.Size = UDim2.new(0, 40, 0, 40)
-    miniButton.Position = UDim2.new(0, 10, 0.5, -20)
+    miniButton.Size = UDim2.new(0, 50, 0, 50)
+    miniButton.Position = UDim2.new(0, 10, 0.5, -25)
     miniButton.Image = "rbxassetid://124010884667015"
-    miniButton.BackgroundTransparency = 1  -- Прозрачный фон
+    miniButton.BackgroundTransparency = 1
     miniButton.Active = true
     miniButton.Draggable = true
     miniButton.Parent = gui
 
-    -- Добавляем эффект при наведении
+    -- Эффекты при наведении
     miniButton.MouseEnter:Connect(function()
-        miniButton.Size = UDim2.new(0, 45, 0, 45)
+        miniButton.Size = UDim2.new(0, 55, 0, 55)
     end)
     
     miniButton.MouseLeave:Connect(function()
-        miniButton.Size = UDim2.new(0, 40, 0, 40)
+        miniButton.Size = UDim2.new(0, 50, 0, 50)
     end)
 
     miniButton.MouseButton1Click:Connect(function()
         miniButton:Destroy()
-        if mainFrame and mainFrame.Parent then
-            mainFrame.Visible = true
-        else
-            createMainGUI()
-        end
+        createMainGUI()
     end)
 end
 
@@ -55,8 +57,8 @@ local function createMainGUI()
 
     mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 200, 0, 150)
-    mainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+    mainFrame.Size = UDim2.new(0, 220, 0, 160)
+    mainFrame.Position = UDim2.new(0.5, -110, 0.5, -80)
     mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     mainFrame.Active = true
     mainFrame.Draggable = true
@@ -65,15 +67,15 @@ local function createMainGUI()
     -- Верхняя панель
     local dragBar = Instance.new("Frame")
     dragBar.Name = "DragBar"
-    dragBar.Size = UDim2.new(1, 0, 0, 20)
+    dragBar.Size = UDim2.new(1, 0, 0, 25)
     dragBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     dragBar.Parent = mainFrame
 
     -- Кнопка закрытия
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 20, 0, 20)
-    closeButton.Position = UDim2.new(1, -20, 0, 0)
+    closeButton.Size = UDim2.new(0, 25, 0, 25)
+    closeButton.Position = UDim2.new(1, -25, 0, 0)
     closeButton.Text = "X"
     closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
     closeButton.Parent = mainFrame
@@ -81,8 +83,8 @@ local function createMainGUI()
     -- Кнопка ТП на спавн
     local spawnButton = Instance.new("TextButton")
     spawnButton.Name = "SpawnButton"
-    spawnButton.Size = UDim2.new(0.8, 0, 0, 40)
-    spawnButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+    spawnButton.Size = UDim2.new(0.9, 0, 0, 45)
+    spawnButton.Position = UDim2.new(0.05, 0, 0.3, 0)
     spawnButton.Text = "ТП на спавн"
     spawnButton.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
     spawnButton.Parent = mainFrame
@@ -90,15 +92,15 @@ local function createMainGUI()
     -- Кнопка ТП на место
     local placeButton = Instance.new("TextButton")
     placeButton.Name = "PlaceButton"
-    placeButton.Size = UDim2.new(0.8, 0, 0, 40)
-    placeButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+    placeButton.Size = UDim2.new(0.9, 0, 0, 45)
+    placeButton.Position = UDim2.new(0.05, 0, 0.65, 0)
     placeButton.Text = "ТП то песта"
     placeButton.BackgroundColor3 = Color3.fromRGB(80, 255, 120)
     placeButton.Parent = mainFrame
 
     -- Обработчики событий
     closeButton.MouseButton1Click:Connect(function()
-        mainFrame.Visible = false
+        mainFrame:Destroy()
         createMinimizedButton()
     end)
 
