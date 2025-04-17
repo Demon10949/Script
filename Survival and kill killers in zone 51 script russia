@@ -4,105 +4,94 @@ gui.Name = "TeleportGUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- Функция телепорта
-local function teleportPlayer(x, y, z)
+-- 1. Создаем главное окно
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 200, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Visible = true
+mainFrame.Parent = gui
+
+-- 2. Добавляем кнопку закрытия (крестик)
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+closeButton.Parent = mainFrame
+
+-- 3. Добавляем кнопки телепортов
+local spawnButton = Instance.new("TextButton")
+spawnButton.Name = "SpawnButton"
+spawnButton.Size = UDim2.new(0.8, 0, 0, 40)
+spawnButton.Position = UDim2.new(0.1, 0, 0.2, 0)
+spawnButton.Text = "ТП на спавн"
+spawnButton.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+spawnButton.Parent = mainFrame
+
+local placeButton = Instance.new("TextButton")
+placeButton.Name = "PlaceButton"
+placeButton.Size = UDim2.new(0.8, 0, 0, 40)
+placeButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+placeButton.Text = "ТП то песта"
+placeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+placeButton.Parent = mainFrame
+
+-- 4. Создаем мини-кнопку (⚫)
+local miniButton = Instance.new("TextButton")
+miniButton.Name = "MiniButton"
+miniButton.Size = UDim2.new(0, 50, 0, 50)
+miniButton.Position = UDim2.new(0, 10, 0.5, -25)
+miniButton.Text = "⚫"
+miniButton.Font = Enum.Font.SciFi
+miniButton.TextSize = 24
+miniButton.BackgroundTransparency = 1
+miniButton.Visible = false
+miniButton.Active = true
+miniButton.Draggable = true
+miniButton.Parent = gui
+
+-- 5. Функция для телепортации
+local function teleportPlayer(cframe)
     local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    if char then
+        local humanoidRootPart = char:FindFirstChild("HumanoidRootPart")
+        if humanoidRootPart then
+            humanoidRootPart.CFrame = cframe
+        else
+            warn("HumanoidRootPart не найден!")
+        end
+    else
+        warn("Персонаж не найден!")
     end
 end
 
--- Основные элементы
-local mainFrame, miniButton
+-- 6. Назначаем обработчики событий
+closeButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    miniButton.Visible = true
+    print("GUI закрыто")
+end)
 
--- Создание мини-кнопки
-local function createMiniButton()
-    if miniButton then miniButton:Destroy() end
-    
-    miniButton = Instance.new("ImageButton")
-    miniButton.Name = "MiniButton"
-    miniButton.Size = UDim2.new(0, 50, 0, 50)
-    miniButton.Position = UDim2.new(0, 10, 0.5, -25)
-    miniButton.Image = "rbxassetid://124010884667015"
-    miniButton.BackgroundTransparency = 1
-    miniButton.Active = true
-    miniButton.Draggable = true
-    miniButton.Parent = gui
+miniButton.MouseButton1Click:Connect(function()
+    miniButton.Visible = false
+    mainFrame.Visible = true
+    print("GUI открыто")
+end)
 
-    -- Эффекты при наведении
-    miniButton.MouseEnter:Connect(function()
-        miniButton.Size = UDim2.new(0, 55, 0, 55)
-    end)
-    miniButton.MouseLeave:Connect(function()
-        miniButton.Size = UDim2.new(0, 50, 0, 50)
-    end)
+spawnButton.MouseButton1Click:Connect(function()
+    teleportPlayer(CFrame.new(331.7, 511.5, 397.9))
+    print("Телепорт на спавн")
+end)
 
-    miniButton.MouseButton1Click:Connect(function()
-        miniButton:Destroy()
-        createMainFrame()
-    end)
-end
+placeButton.MouseButton1Click:Connect(function()
+    teleportPlayer(CFrame.new(113.7, 335.5, 568.2))
+    print("Телепорт на место")
+end)
 
--- Создание основного окна
-local function createMainFrame()
-    if mainFrame then mainFrame:Destroy() end
-    
-    mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 220, 0, 160)
-    mainFrame.Position = UDim2.new(0.5, -110, 0.5, -80)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    mainFrame.Active = true
-    mainFrame.Draggable = true
-    mainFrame.Parent = gui
-
-    -- Верхняя панель
-    local dragBar = Instance.new("Frame")
-    dragBar.Name = "DragBar"
-    dragBar.Size = UDim2.new(1, 0, 0, 25)
-    dragBar.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    dragBar.Parent = mainFrame
-
-    -- Кнопка закрытия
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 25, 0, 25)
-    closeButton.Position = UDim2.new(1, -25, 0, 0)
-    closeButton.Text = "X"
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    closeButton.Parent = mainFrame
-
-    -- Кнопки телепортов
-    local spawnButton = Instance.new("TextButton")
-    spawnButton.Name = "SpawnButton"
-    spawnButton.Size = UDim2.new(0.9, 0, 0, 45)
-    spawnButton.Position = UDim2.new(0.05, 0, 0.3, 0)
-    spawnButton.Text = "ТП на спавн"
-    spawnButton.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-    spawnButton.Parent = mainFrame
-
-    local placeButton = Instance.new("TextButton")
-    placeButton.Name = "PlaceButton"
-    placeButton.Size = UDim2.new(0.9, 0, 0, 45)
-    placeButton.Position = UDim2.new(0.05, 0, 0.65, 0)
-    placeButton.Text = "ТП то песта"
-    placeButton.BackgroundColor3 = Color3.fromRGB(80, 255, 120)
-    placeButton.Parent = mainFrame
-
-    -- Обработчики событий
-    closeButton.MouseButton1Click:Connect(function()
-        mainFrame:Destroy()
-        createMiniButton()
-    end)
-
-    spawnButton.MouseButton1Click:Connect(function()
-        teleportPlayer(331.7, 511.5, 397.9)
-    end)
-
-    placeButton.MouseButton1Click:Connect(function()
-        teleportPlayer(113.7, 335.5, 568.2)
-    end)
-end
-
--- Первый запуск
-createMainFrame()
+print("GUI успешно загружено!")
