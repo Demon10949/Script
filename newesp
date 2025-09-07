@@ -1,0 +1,208 @@
+-- LocalScript в StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local isWallhackEnabled = false
+local isGuiVisible = true
+local espElements = {}
+
+local isDragging = false
+local dragOffset
+
+--- GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AdminGui"
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Name = "AdminFrame"
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0.5, -125, 0.5, -75)
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+frame.BorderColor3 = Color3.new(0.6, 0.6, 0.6)
+frame.BorderSizePixel = 2
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Name = "TitleBar"
+title.Text = "Админ-панель"
+title.Size = UDim2.new(1, 0, 0.2, 0)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Font = Enum.Font.SourceSansBold
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Parent = frame
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "WHButton"
+toggleButton.Text = "OFF"
+toggleButton.Size = UDim2.new(0.8, 0, 0.25, 0)
+toggleButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+toggleButton.Parent = frame
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Text = "×"
+closeButton.Size = UDim2.new(0.1, 0, 0.2, 0)
+closeButton.Position = UDim2.new(0.9, 0, 0, 0)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+closeButton.Parent = frame
+
+--- ЛОГИКА ПЕРЕМЕЩЕНИЯ GUI
+title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragOffset = Vector2.new(input.Position.X, input.Position.Y) - Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local newPos = Vector2.new(input.Position.X, input.Position.Y) - dragOffset
+        frame.Position = UDim2.new(0, newPos.X, 0, newPos.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+--- ФУНКЦИИ WH
+local function createEspElements(player)
+    local character = player.Character
+    if not character then return end
+    
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart or espElements[player] then return end
+    
+    local playerGui = Instance.new("BillboardGui")
+    playerGui.Adornee = humanoidRootPart
+    playerGui.Size = UDim2.new(0, 100, 0, 50)
+    playerGui.ExtentsOffset = Vector3.new(0, 3, 0)
+    playerGui.AlwaysOnTop = true
+    playerGui.Parent = humanoidRootPart
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Text = player.Name
+    nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.TextScaled = true
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextStrokeTransparency = 0
+    nameLabel.Parent = playerGui
+
+    local healthLabel = Instance.new("TextLabel")
+    healthLabel.Text = "HP: " .. math.floor(character.Humanoid.Health)
+    healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
+    healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    healthLabel.Font = Enum.Font.SourceSansBold
+    healthLabel.TextScaled = true
+    healthLabel.TextColor3 = Color3.new(0, 1, 0)
+    healthLabel.BackgroundTransparency = 1
+    healthLabel.TextStrokeTransparency = 0
+    healthLabel.Parent = playerGui
+    
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.new(1, 0, 0)
+    highlight.OutlineColor = Color3.new(0.5, 0, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Parent = character
+
+    espElements[player] = {gui = playerGui, highlight = highlight}
+    
+    local healthConnection
+    local function cleanup()
+        if espElements[player] then
+            if espElements[player].gui.Parent then espElements[player].gui:Destroy() end
+            if espElements[player].highlight.Parent then espElements[player].highlight:Destroy() end
+            espElements[player] = nil
+        end
+    end
+
+    healthConnection = character.Humanoid.HealthChanged:Connect(function(health)
+        healthLabel.Text = "HP: " .. math.floor(health)
+    end)
+    
+    character.ChildRemoved:Connect(function(part)
+        if part.Name == "HumanoidRootPart" and character.Humanoid.Health <= 0 then
+            cleanup()
+        end
+    end)
+end
+
+local function toggleWallhack()
+    isWallhackEnabled = not isWallhackEnabled
+    if isWallhackEnabled then
+        toggleButton.Text = "ON"
+        toggleButton.BackgroundColor3 = Color3.new(0.1, 0.8, 0.1)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                createEspElements(player)
+            end
+        end
+        Players.PlayerAdded:Connect(function(player)
+            if isWallhackEnabled then createEspElements(player) end
+        end)
+    else
+        toggleButton.Text = "OFF"
+        toggleButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+        for _, elements in pairs(espElements) do
+            if elements.gui.Parent then elements.gui:Destroy() end
+            if elements.highlight.Parent then elements.highlight:Destroy() end
+        end
+        espElements = {}
+    end
+end
+
+local function toggleGuiVisibility()
+    isGuiVisible = not isGuiVisible
+    frame.Visible = isGuiVisible
+end
+
+-- Подключаем функции к кнопкам
+toggleButton.MouseButton1Click:Connect(toggleWallhack)
+closeButton.MouseButton1Click:Connect(toggleGuiVisibility)
+
+--- УСТРАНЕНИЕ ПРОБЛЕМЫ ПОСЛЕ СМЕРТИ
+LocalPlayer.CharacterAdded:Connect(function()
+    if isWallhackEnabled then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                createEspElements(player)
+            end
+        end
+    end
+end)
+
+-- Создаем ESP для всех игроков, которые уже есть в игре
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        if player.Character then
+            createEspElements(player)
+        else
+            player.CharacterAdded:Connect(function()
+                if isWallhackEnabled then
+                    createEspElements(player)
+                end
+            end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if isWallhackEnabled then
+        createEspElements(player)
+    end
+end)
