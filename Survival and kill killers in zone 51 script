@@ -30,7 +30,7 @@ local spawnButton = Instance.new("TextButton")
 spawnButton.Name = "SpawnButton"
 spawnButton.Size = UDim2.new(0.8, 0, 0, 40)
 spawnButton.Position = UDim2.new(0.1, 0, 0.2, 0)
-spawnButton.Text = "ТП на спавн"
+spawnButton.Text = "tp to spawn"
 spawnButton.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 spawnButton.Parent = mainFrame
 
@@ -38,7 +38,7 @@ local placeButton = Instance.new("TextButton")
 placeButton.Name = "PlaceButton"
 placeButton.Size = UDim2.new(0.8, 0, 0, 40)
 placeButton.Position = UDim2.new(0.1, 0, 0.6, 0)
-placeButton.Text = "ТП то песта"
+placeButton.Text = "tp to gun"
 placeButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 placeButton.Parent = mainFrame
 
