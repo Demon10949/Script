@@ -28,7 +28,7 @@ frame.Parent = screenGui
 
 local title = Instance.new("TextLabel")
 title.Name = "TitleBar"
-title.Text = "Админ-панель"
+title.Text = "ESP"
 title.Size = UDim2.new(1, 0, 0.2, 0)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.Font = Enum.Font.SourceSansBold
