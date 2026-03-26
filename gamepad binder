@@ -1,0 +1,235 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local keyBinds = {}
+
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GamepadMapper_Fixed"
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 10
+screenGui.Parent = playerGui
+
+
+local openButton = Instance.new("TextButton")
+openButton.Name = "OpenButton"
+openButton.Size = UDim2.new(0, 50, 0, 50)
+openButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+openButton.BackgroundColor3 = Color3.fromRGB(255, 128, 0)
+openButton.Text = "⚙️"
+openButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+openButton.TextSize = 25
+openButton.Visible = false
+openButton.ZIndex = 20
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = openButton
+openButton.Parent = screenGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 400, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 40, 0, 30)
+minimizeBtn.Position = UDim2.new(0, 5, 0, 5)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 128, 0)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.TextSize = 30
+minimizeBtn.ZIndex = 5
+minimizeBtn.Parent = topBar
+
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 40, 0, 30)
+closeBtn.Position = UDim2.new(1, -45, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeBtn.Text = "x"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 20
+closeBtn.ZIndex = 5
+closeBtn.Parent = topBar
+
+
+local addBtn = Instance.new("TextButton")
+addBtn.Size = UDim2.new(0, 80, 0, 35)
+addBtn.Position = UDim2.new(1, -90, 0, 50)
+addBtn.BackgroundColor3 = Color3.fromRGB(173, 255, 47)
+addBtn.Text = "add+"
+addBtn.TextSize = 18
+addBtn.ZIndex = 5
+addBtn.Parent = mainFrame
+
+
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -20, 1, -110)
+scroll.Position = UDim2.new(0, 10, 0, 100)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.ScrollBarThickness = 4
+scroll.Parent = mainFrame
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 8)
+layout.Parent = scroll
+
+
+local function enableDrag(frame, handle)
+	local dragging, dragInput, dragStart, startPos
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+end
+
+enableDrag(mainFrame, topBar)
+enableDrag(openButton, openButton)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+	openButton.Position = UDim2.new(0, mainFrame.AbsolutePosition.X, 0, mainFrame.AbsolutePosition.Y)
+	mainFrame.Visible = false
+	openButton.Visible = true
+end)
+
+openButton.MouseButton1Click:Connect(function()
+	mainFrame.Position = UDim2.new(0, openButton.AbsolutePosition.X, 0, openButton.AbsolutePosition.Y)
+	mainFrame.Visible = true
+	openButton.Visible = false
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+	script:Destroy()
+end)
+
+
+local function startCapture(button, isGamepad, callback)
+	button.Text = "Enter"
+	local connection
+	connection = UserInputService.InputBegan:Connect(function(input)
+	
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not isGamepad then 
+
+			task.wait(0.1)
+		end
+		
+		local valid = false
+		if isGamepad and input.UserInputType.Name:match("Gamepad") then
+			valid = true
+		elseif not isGamepad then
+			if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType.Name:match("MouseButton") then
+				valid = true
+			end
+		end
+
+		if valid then
+			connection:Disconnect()
+			button.Text = input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode.Name or input.UserInputType.Name
+			callback(input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode or input.UserInputType)
+		end
+	end)
+end
+
+addBtn.MouseButton1Click:Connect(function()
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -10, 0, 45)
+	row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	row.Parent = scroll
+
+	local gpBtn = Instance.new("TextButton")
+	gpBtn.Size = UDim2.new(0.4, 0, 0.8, 0)
+	gpBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+	gpBtn.Text = "gamepadkey"
+	gpBtn.Parent = row
+
+	local pcBtn = Instance.new("TextButton")
+	pcBtn.Size = UDim2.new(0.4, 0, 0.8, 0)
+	pcBtn.Position = UDim2.new(0.5, 0, 0.1, 0)
+	pcBtn.Text = "pckey"
+	pcBtn.Parent = row
+
+	local delBtn = Instance.new("TextButton")
+	delBtn.Size = UDim2.new(0.1, 0, 0.8, 0)
+	delBtn.Position = UDim2.new(0.9, 0, 0.1, 0)
+	delBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	delBtn.Text = "x"
+	delBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	delBtn.Parent = row
+
+	local currentGP, currentPC
+
+	gpBtn.MouseButton1Click:Connect(function()
+		startCapture(gpBtn, true, function(key)
+			if currentGP then keyBinds[currentGP] = nil end
+			currentGP = key
+			if currentPC then keyBinds[currentGP] = currentPC end
+		end)
+	end)
+
+	pcBtn.MouseButton1Click:Connect(function()
+		startCapture(pcBtn, false, function(key)
+			currentPC = key
+			if currentGP then keyBinds[currentGP] = currentPC end
+		end)
+	end)
+
+	delBtn.MouseButton1Click:Connect(function()
+		if currentGP then keyBinds[currentGP] = nil end
+		row:Destroy()
+	end)
+	
+	scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+end)
+
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	local target = keyBinds[input.KeyCode] or keyBinds[input.UserInputType]
+	if target then
+		if tostring(target):match("KeyCode") then
+			VirtualInputManager:SendKeyEvent(true, target, false, game)
+		end
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input, processed)
+	local target = keyBinds[input.KeyCode] or keyBinds[input.UserInputType]
+	if target then
+		if tostring(target):match("KeyCode") then
+			VirtualInputManager:SendKeyEvent(false, target, false, game)
+		end
+	end
+end)
