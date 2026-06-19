@@ -1,5 +1,5 @@
 --[=[
-    Roblox Ultra Smart Aimbot + ESP System (Fixed Center Target)
+    Roblox Ultra Smart Aimbot + ESP System (Anti-Ghosting Fixed)
     Разработчик: Твой бро-скриптер
     Управление: 
     - F1: Открыть/Закрыть меню
@@ -189,7 +189,20 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
---- ### 3. Логика ESP (ВХ Квадраты) ###
+--- ### 3. Валидация игрока (Жесткая проверка на существование) ###
+local function isPlayerValid(player)
+	-- Проверка: игрок существует в списке, персонаж загружен, находится на карте, и у него > 0 HP
+	if player and player.Parent == Players and player.Character and player.Character.Parent == workspace then
+		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+		local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+		if humanoid and rootPart and humanoid.Health > 1 then
+			return true
+		end
+	end
+	return false
+end
+
+--- ### 4. Логика ESP (ВХ Квадраты) ###
 local function createESP(player)
 	if espBoxes[player] then return end
 
@@ -219,7 +232,8 @@ Players.PlayerRemoving:Connect(removeESP)
 
 local function updateESP()
 	for player, box in pairs(espBoxes) do
-		if EspEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+		-- Используем жесткую валидацию игрока
+		if EspEnabled and isPlayerValid(player) then
 			local rootPart = player.Character.HumanoidRootPart
 			local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
@@ -242,12 +256,12 @@ local function updateESP()
 				box.Visible = false
 			end
 		else
-			box.Visible = false 
+			box.Visible = false -- Если игрок мертв или вышел — бокс ГАРАНТИРОВАННО скрывается
 		end
 	end
 end
 
---- ### 4. Функция Самоликвидации (Self-Destroy) ###
+--- ### 5. Функция Самоликвидации (Self-Destroy) ###
 local renderConnection 
 
 CloseButton.MouseButton1Click:Connect(function()
@@ -263,7 +277,7 @@ CloseButton.MouseButton1Click:Connect(function()
 	script:Destroy()    
 end)
 
---- ### 5. Логика Изменения Настроек Интерфейса ###
+--- ### 6. Логика Изменения Настроек Интерфейса ###
 local function updateUI()
 	FovLabel.Text = "FOV: " .. FovRadius
 	FOVDrawing.Radius = FovRadius
@@ -319,7 +333,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
---- ### 6. Wall Check ###
+--- ### 7. Wall Check ###
 local function isVisible(targetPartObj, targetCharacter)
 	local origin = Camera.CFrame.Position
 	local direction = targetPartObj.Position - origin
@@ -333,16 +347,15 @@ local function isVisible(targetPartObj, targetCharacter)
 	return raycastResult == nil
 end
 
---- ### 7. Поиск цели по HP приоритету (ИСПРАВЛЕНО: Расчет от Центра Экрана) ###
+--- ### 8. Умный поиск цели с учетом фикса фантомов ###
 local function getBestTarget()
 	local bestTargetPlayer = nil
 	local lowestHealth = math.huge
-	
-	-- ИСПРАВЛЕНИЕ: берем истинный математический центр экрана вместо позиции мыши
 	local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and player.Character then
+		-- Используем общую валидацию и для Аимбота
+		if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team and isPlayerValid(player) then
 			
 			local actualPart = TargetPart
 			if TargetPart == "Torso" and player.Character:FindFirstChild("UpperTorso") then
@@ -350,13 +363,12 @@ local function getBestTarget()
 			end
 			
 			local part = player.Character:FindFirstChild(actualPart)
-			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+			local humanoid = player.Character.Humanoid
 			
-			if part and humanoid and humanoid.Health > 0 then
+			if part then
 				local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
 				
 				if onScreen then
-					-- Считаем дистанцию строго от геометрического центра круга FOV
 					local distanceToCenter = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
 					
 					if distanceToCenter < FovRadius then
@@ -376,14 +388,16 @@ end
 
 updateUI()
 
---- ### 8. Основной цикл рендера ###
+--- ### 9. Основной цикл рендера ###
 renderConnection = RunService.RenderStepped:Connect(function()
 	if FOVDrawing then
 		FOVDrawing.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 	end
 	
+	-- Обновление ВХ
 	updateESP()
 	
+	-- Работа Аимбота
 	if AimbotEnabled then
 		local targetPlayer = getBestTarget()
 		if targetPlayer and targetPlayer.Character then
