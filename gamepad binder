@@ -7,13 +7,11 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local keyBinds = {}
 
-
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "GamepadMapper_Fixed"
+screenGui.Name = "UniversalGamepadMapper_HoldEdition"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 10
 screenGui.Parent = playerGui
-
 
 local openButton = Instance.new("TextButton")
 openButton.Name = "OpenButton"
@@ -32,13 +30,12 @@ openButton.Parent = screenGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 400, 0, 450)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+mainFrame.Size = UDim2.new(0, 450, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -225)
 mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
+mainFrame.Active = true 
 mainFrame.Parent = screenGui
-
 
 local topBar = Instance.new("Frame")
 topBar.Name = "TopBar"
@@ -46,7 +43,6 @@ topBar.Size = UDim2.new(1, 0, 0, 40)
 topBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
-
 
 local minimizeBtn = Instance.new("TextButton")
 minimizeBtn.Size = UDim2.new(0, 40, 0, 30)
@@ -58,7 +54,6 @@ minimizeBtn.TextSize = 30
 minimizeBtn.ZIndex = 5
 minimizeBtn.Parent = topBar
 
-
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 40, 0, 30)
 closeBtn.Position = UDim2.new(1, -45, 0, 5)
@@ -69,7 +64,6 @@ closeBtn.TextSize = 20
 closeBtn.ZIndex = 5
 closeBtn.Parent = topBar
 
-
 local addBtn = Instance.new("TextButton")
 addBtn.Size = UDim2.new(0, 80, 0, 35)
 addBtn.Position = UDim2.new(1, -90, 0, 50)
@@ -78,7 +72,6 @@ addBtn.Text = "add+"
 addBtn.TextSize = 18
 addBtn.ZIndex = 5
 addBtn.Parent = mainFrame
-
 
 local scroll = Instance.new("ScrollingFrame")
 scroll.Size = UDim2.new(1, -20, 1, -110)
@@ -92,9 +85,8 @@ local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 8)
 layout.Parent = scroll
 
-
 local function enableDrag(frame, handle)
-	local dragging, dragInput, dragStart, startPos
+	local dragging, dragStart, startPos
 	handle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
@@ -135,30 +127,77 @@ closeBtn.MouseButton1Click:Connect(function()
 	script:Destroy()
 end)
 
+local activeTimers = {}
 
-local function startCapture(button, isGamepad, callback)
-	button.Text = "Enter"
+local function capturePCCombo(button, callback)
+	local buttonId = tostring(button)
+	if activeTimers[buttonId] then
+		activeTimers[buttonId] = false
+	end
+	activeTimers[buttonId] = true
+
+	button.Text = "Listening (5s)"
+	task.wait(0.15)
+
+	local comboKeys = {}
+	local duration = 5
+	local startTime = os.clock()
+
 	local connection
 	connection = UserInputService.InputBegan:Connect(function(input)
-	
-		if input.UserInputType == Enum.UserInputType.MouseButton1 and not isGamepad then 
+		local isKeyboard = (input.UserInputType == Enum.UserInputType.Keyboard)
+		local isMouse = input.UserInputType.Name:match("MouseButton")
 
-			task.wait(0.1)
-		end
-		
-		local valid = false
-		if isGamepad and input.UserInputType.Name:match("Gamepad") then
-			valid = true
-		elseif not isGamepad then
-			if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType.Name:match("MouseButton") then
-				valid = true
+		if isKeyboard or isMouse then
+			local key = isKeyboard and input.KeyCode or input.UserInputType
+			if key ~= Enum.KeyCode.Unknown and #comboKeys < 5 and not table.find(comboKeys, key) then
+				table.insert(comboKeys, key)
 			end
 		end
+	end)
 
-		if valid then
+	task.spawn(function()
+		while os.clock() - startTime < duration and activeTimers[buttonId] do
+			local timePassed = os.clock() - startTime
+			local remaining = math.ceil(duration - timePassed)
+			if remaining < 0 then remaining = 0 end
+
+			if #comboKeys == 0 then
+				button.Text = "Listening (" .. remaining .. "s)"
+			else
+				local names = {}
+				for _, k in ipairs(comboKeys) do table.insert(names, k.Name) end
+				button.Text = table.concat(names, " + ") .. " (" .. remaining .. "s)"
+			end
+			task.wait(0.05)
+		end
+
+		connection:Disconnect()
+
+		if activeTimers[buttonId] then
+			if #comboKeys == 0 then
+				button.Text = "pckey"
+				callback(nil)
+			else
+				local names = {}
+				for _, k in ipairs(comboKeys) do table.insert(names, k.Name) end
+				button.Text = table.concat(names, " + ")
+				callback(comboKeys)
+			end
+			activeTimers[buttonId] = nil
+		end
+	end)
+end
+
+local function captureGamepadKey(button, callback)
+	button.Text = "Press GP Key"
+	task.wait(0.1)
+	local connection
+	connection = UserInputService.InputBegan:Connect(function(input)
+		if input.UserInputType.Name:match("Gamepad") then
 			connection:Disconnect()
-			button.Text = input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode.Name or input.UserInputType.Name
-			callback(input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode or input.UserInputType)
+			button.Text = input.KeyCode.Name
+			callback(input.KeyCode)
 		end
 	end)
 end
@@ -170,39 +209,49 @@ addBtn.MouseButton1Click:Connect(function()
 	row.Parent = scroll
 
 	local gpBtn = Instance.new("TextButton")
-	gpBtn.Size = UDim2.new(0.4, 0, 0.8, 0)
-	gpBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+	gpBtn.Size = UDim2.new(0.35, 0, 0.8, 0)
+	gpBtn.Position = UDim2.new(0.03, 0, 0.1, 0)
 	gpBtn.Text = "gamepadkey"
+	gpBtn.TextWrapped = true
 	gpBtn.Parent = row
 
+	local equalsLabel = Instance.new("TextLabel")
+	equalsLabel.Size = UDim2.new(0.05, 0, 1, 0)
+	equalsLabel.Position = UDim2.new(0.4, 0, 0, 0)
+	equalsLabel.Text = "="
+	equalsLabel.BackgroundTransparency = 1
+	equalsLabel.Parent = row
+
 	local pcBtn = Instance.new("TextButton")
-	pcBtn.Size = UDim2.new(0.4, 0, 0.8, 0)
-	pcBtn.Position = UDim2.new(0.5, 0, 0.1, 0)
+	pcBtn.Size = UDim2.new(0.45, 0, 0.8, 0)
+	pcBtn.Position = UDim2.new(0.46, 0, 0.1, 0)
 	pcBtn.Text = "pckey"
+	pcBtn.TextWrapped = true
 	pcBtn.Parent = row
 
 	local delBtn = Instance.new("TextButton")
-	delBtn.Size = UDim2.new(0.1, 0, 0.8, 0)
-	delBtn.Position = UDim2.new(0.9, 0, 0.1, 0)
+	delBtn.Size = UDim2.new(0.05, 0, 0.8, 0)
+	delBtn.Position = UDim2.new(0.93, 0, 0.1, 0)
 	delBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 	delBtn.Text = "x"
 	delBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	delBtn.Parent = row
 
-	local currentGP, currentPC
+	local currentGP = nil
+	local currentPCCombo = nil
 
 	gpBtn.MouseButton1Click:Connect(function()
-		startCapture(gpBtn, true, function(key)
+		captureGamepadKey(gpBtn, function(key)
 			if currentGP then keyBinds[currentGP] = nil end
 			currentGP = key
-			if currentPC then keyBinds[currentGP] = currentPC end
+			if currentPCCombo then keyBinds[currentGP] = currentPCCombo end
 		end)
 	end)
 
 	pcBtn.MouseButton1Click:Connect(function()
-		startCapture(pcBtn, false, function(key)
-			currentPC = key
-			if currentGP then keyBinds[currentGP] = currentPC end
+		capturePCCombo(pcBtn, function(combo)
+			currentPCCombo = combo
+			if currentGP then keyBinds[currentGP] = currentPCCombo end
 		end)
 	end)
 
@@ -214,22 +263,45 @@ addBtn.MouseButton1Click:Connect(function()
 	scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
 end)
 
+local function simulateCombo(combo, isPressed)
+	if not combo or #combo == 0 then return end
+	
+	if isPressed then
+		for i = 1, #combo do
+			local target = combo[i]
+			if tostring(target):match("KeyCode") then
+				VirtualInputManager:SendKeyEvent(true, target, false, game)
+			elseif tostring(target):match("UserInputType") then
+				local mb = (target == Enum.UserInputType.MouseButton1 and 0) or (target == Enum.UserInputType.MouseButton2 and 1) or 2
+				local cam = workspace.CurrentCamera
+				VirtualInputManager:SendMouseButtonEvent(cam.ViewportSize.X/2, cam.ViewportSize.Y/2, mb, true, game, 1)
+			end
+			task.wait(0.01)
+		end
+	else
+		for i = #combo, 1, -1 do
+			local target = combo[i]
+			if tostring(target):match("KeyCode") then
+				VirtualInputManager:SendKeyEvent(false, target, false, game)
+			elseif tostring(target):match("UserInputType") then
+				local mb = (target == Enum.UserInputType.MouseButton1 and 0) or (target == Enum.UserInputType.MouseButton2 and 1) or 2
+				local cam = workspace.CurrentCamera
+				VirtualInputManager:SendMouseButtonEvent(cam.ViewportSize.X/2, cam.ViewportSize.Y/2, mb, false, game, 1)
+			end
+			task.wait(0.01)
+		end
+	end
+end
 
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then return end
-	local target = keyBinds[input.KeyCode] or keyBinds[input.UserInputType]
-	if target then
-		if tostring(target):match("KeyCode") then
-			VirtualInputManager:SendKeyEvent(true, target, false, game)
-		end
+	if input.UserInputType.Name:match("Gamepad") and keyBinds[input.KeyCode] then
+		simulateCombo(keyBinds[input.KeyCode], true)
 	end
 end)
 
 UserInputService.InputEnded:Connect(function(input, processed)
-	local target = keyBinds[input.KeyCode] or keyBinds[input.UserInputType]
-	if target then
-		if tostring(target):match("KeyCode") then
-			VirtualInputManager:SendKeyEvent(false, target, false, game)
-		end
+	if input.UserInputType.Name:match("Gamepad") and keyBinds[input.KeyCode] then
+		simulateCombo(keyBinds[input.KeyCode], false)
 	end
 end)
