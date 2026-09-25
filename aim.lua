@@ -186,7 +186,7 @@ local function showLoadNotification()
 
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
 
-    label.Text = "Ultra Aimbot loaded"
+    label.Text = "script by @sunglowez"
 
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
 
@@ -266,7 +266,7 @@ Title.Size = UDim2.new(1, -35, 0, 35)
 
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 
-Title.Text = "  SMART AIMBOT + ESP (F1)"
+Title.Text = "aim bot by sunglowez"
 
 Title.TextColor3 = Color3.fromRGB(0, 153, 255)
 
