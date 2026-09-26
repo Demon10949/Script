@@ -78,6 +78,12 @@ local AimbotEnabled = Config.AimbotEnabled
 
 local CursorMagnetEnabled = Config.CursorMagnetEnabled
 
+if not AimbotEnabled then
+
+    CursorMagnetEnabled = false
+
+end
+
 local EspEnabled = Config.EspEnabled
 
 local WallCheckEnabled = Config.WallCheckEnabled
@@ -85,10 +91,6 @@ local WallCheckEnabled = Config.WallCheckEnabled
 local TeamCheckEnabled = Config.TeamCheckEnabled
 
 local FriendCheckEnabled = Config.FriendCheckEnabled
-
-if not AimbotEnabled then
-    CursorMagnetEnabled = false
-end
 
 local FovRadius = math.clamp(tonumber(Config.FovRadius) or 200, 10, 600)
 
@@ -186,7 +188,7 @@ local function showLoadNotification()
 
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
 
-    label.Text = "script by @sunglowez"
+    label.Text = "Ultra Aimbot loaded"
 
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
 
@@ -266,7 +268,7 @@ Title.Size = UDim2.new(1, -35, 0, 35)
 
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 
-Title.Text = "aim bot by sunglowez"
+Title.Text = "  SMART AIMBOT + ESP (F1)"
 
 Title.TextColor3 = Color3.fromRGB(0, 153, 255)
 
@@ -516,7 +518,7 @@ local InfoLabel = Instance.new("TextLabel")
 
 InfoLabel.Size = UDim2.new(1, -20, 0, 70)
 
-InfoLabel.Position = UDim2.new(0, 10, 0, 280)
+InfoLabel.Position = UDim2.new(0, 10, 0, 275)
 
 InfoLabel.BackgroundTransparency = 1
 
@@ -652,21 +654,26 @@ end
 
 local function createESP(player)
 
-    if espBoxes[player] then
+    if player == LocalPlayer then
 
         return
 
     end
 
-    local box = Drawing.new("Square")
+    if espBoxes[player] then
 
-    box.Visible = false
+        for _, highlight in ipairs(espBoxes[player]) do
 
-    box.Thickness = 1.5
+            pcall(function() highlight:Destroy() end)
 
-    box.Filled = false
+        end
 
-    espBoxes[player] = box
+    end
+
+    espBoxes[player] = {
+        Character = nil,
+        Highlights = {}
+    }
 
 end
 
@@ -674,7 +681,11 @@ local function removeESP(player)
 
     if espBoxes[player] then
 
-        espBoxes[player]:Remove()
+        for _, highlight in ipairs(espBoxes[player].Highlights) do
+
+            pcall(function() highlight:Destroy() end)
+
+        end
 
         espBoxes[player] = nil
 
@@ -734,55 +745,87 @@ local function getESPColor(player)
 
 end
 
+local function rebuildESPParts(player, data)
+
+    for _, highlight in ipairs(data.Highlights) do
+
+        pcall(function() highlight:Destroy() end)
+
+    end
+
+    data.Highlights = {}
+    data.Character = player.Character
+
+    if not data.Character then
+
+        return
+
+    end
+
+    for _, part in ipairs(data.Character:GetDescendants()) do
+
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "ESPPart"
+            highlight.Adornee = part
+            highlight.FillTransparency = 0.72
+            highlight.OutlineTransparency = 0
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            highlight.FillColor = getESPColor(player)
+            highlight.OutlineColor = getESPColor(player)
+            highlight.Parent = part
+            table.insert(data.Highlights, highlight)
+
+        end
+
+    end
+
+end
+
 local function updateESP()
 
-    for player, box in pairs(espBoxes) do
+    for player, data in pairs(espBoxes) do
 
-        if EspEnabled and isPlayerValid(player) then
+        if player == LocalPlayer then
 
-            local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            continue
 
-            if rootPart then
+        end
 
-                local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+        if EspEnabled and isPlayerValid(player) and player.Character then
 
-                if onScreen and screenPos.Z > 0 then
+            if data.Character ~= player.Character then
 
-                    local scaleFactor = 1 / (screenPos.Z * math.tan(math.rad(Camera.FieldOfView / 2))) * 1000
+                rebuildESPParts(player, data)
 
-                    local boxWidth = 3 * scaleFactor
+            end
 
-                    local boxHeight = 4.5 * scaleFactor
+            local color = getESPColor(player)
 
-                    box.Size = Vector2.new(boxWidth, boxHeight)
+            for _, highlight in ipairs(data.Highlights) do
 
-                    box.Position = Vector2.new(
+                if highlight and highlight.Parent then
 
-                        screenPos.X - boxWidth / 2,
-
-                        screenPos.Y - boxHeight / 2
-
-                    )
-
-                    box.Color = getESPColor(player)
-
-                    box.Visible = true
-
-                else
-
-                    box.Visible = false
+                    highlight.FillColor = color
+                    highlight.OutlineColor = color
+                    highlight.Enabled = true
 
                 end
-
-            else
-
-                box.Visible = false
 
             end
 
         else
 
-            box.Visible = false
+            for _, highlight in ipairs(data.Highlights) do
+
+                if highlight then
+
+                    highlight.Enabled = false
+
+                end
+
+            end
 
         end
 
@@ -1012,6 +1055,7 @@ local function moveCursorToTarget(targetPart)
 
 end
 
+
 local function updateUI()
 
     FovLabel.Text = "FOV: " .. FovRadius
@@ -1127,7 +1171,9 @@ AimbotToggleBtn.MouseButton1Click:Connect(function()
     AimbotEnabled = not AimbotEnabled
 
     if not AimbotEnabled then
+
         CursorMagnetEnabled = false
+
     end
 
     saveConfig()
@@ -1139,16 +1185,21 @@ end)
 CursorToggleBtn.MouseButton1Click:Connect(function()
 
     if not AimbotEnabled then
-        return
-    end
 
-    CursorMagnetEnabled = not CursorMagnetEnabled
+        CursorMagnetEnabled = false
+
+    else
+
+        CursorMagnetEnabled = not CursorMagnetEnabled
+
+    end
 
     saveConfig()
 
     updateUI()
 
 end)
+
 
 WallToggleBtn.MouseButton1Click:Connect(function()
 
@@ -1197,7 +1248,9 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         AimbotEnabled = not AimbotEnabled
 
         if not AimbotEnabled then
+
             CursorMagnetEnabled = false
+
         end
 
         saveConfig()
@@ -1206,11 +1259,15 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
     elseif input.KeyCode == Enum.KeyCode.F3 then
 
-        if not AimbotEnabled then
-            return
-        end
+        if AimbotEnabled then
 
-        CursorMagnetEnabled = not CursorMagnetEnabled
+            CursorMagnetEnabled = not CursorMagnetEnabled
+
+        else
+
+            CursorMagnetEnabled = false
+
+        end
 
         saveConfig()
 
@@ -1284,11 +1341,7 @@ renderConnection = RunService.RenderStepped:Connect(function()
 
         if targetPartObj then
 
-            if AimbotEnabled and CursorMagnetEnabled then
-
-                moveCursorToTarget(targetPartObj)
-
-            elseif AimbotEnabled then
+            if AimbotEnabled and not CursorMagnetEnabled then
 
                 Camera.CFrame = CFrame.new(
 
@@ -1297,6 +1350,10 @@ renderConnection = RunService.RenderStepped:Connect(function()
                     targetPartObj.Position
 
                 )
+
+            elseif AimbotEnabled and CursorMagnetEnabled then
+
+                moveCursorToTarget(targetPartObj)
 
             end
 
