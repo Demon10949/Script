@@ -91,6 +91,7 @@ local WallCheckEnabled = Config.WallCheckEnabled
 local TeamCheckEnabled = Config.TeamCheckEnabled
 
 local FriendCheckEnabled = Config.FriendCheckEnabled
+local ForceFieldCheckEnabled = Config.ForceFieldCheckEnabled
 
 local FovRadius = math.clamp(tonumber(Config.FovRadius) or 200, 10, 600)
 
@@ -135,6 +136,7 @@ local function saveConfig()
     Config.TeamCheckEnabled = TeamCheckEnabled
 
     Config.FriendCheckEnabled = FriendCheckEnabled
+    Config.ForceFieldCheckEnabled = ForceFieldCheckEnabled
 
     Config.FovRadius = FovRadius
 
@@ -188,7 +190,7 @@ local function showLoadNotification()
 
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
 
-    label.Text = "aim bot by @sunglowez"
+    label.Text = " aim bot by @sunglowez "
 
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
 
@@ -268,7 +270,7 @@ Title.Size = UDim2.new(1, -35, 0, 35)
 
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 
-Title.Text = " aim bot "
+Title.Text = "  Aim Bot  "
 
 Title.TextColor3 = Color3.fromRGB(0, 153, 255)
 
@@ -514,11 +516,20 @@ FriendToggleBtn.TextSize = 14
 
 FriendToggleBtn.Parent = MainFrame
 
+local ForceFieldToggleBtn = Instance.new("TextButton")
+ForceFieldToggleBtn.Size = UDim2.new(0, 120, 0, 25)
+ForceFieldToggleBtn.Position = UDim2.new(0, 10, 0, 275)
+ForceFieldToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ForceFieldToggleBtn.BorderColor3 = Color3.fromRGB(0, 102, 204)
+ForceFieldToggleBtn.Font = Enum.Font.SourceSansBold
+ForceFieldToggleBtn.TextSize = 14
+ForceFieldToggleBtn.Parent = MainFrame
+
 local InfoLabel = Instance.new("TextLabel")
 
 InfoLabel.Size = UDim2.new(1, -20, 0, 70)
 
-InfoLabel.Position = UDim2.new(0, 10, 0, 275)
+InfoLabel.Position = UDim2.new(0, 10, 0, 315)
 
 InfoLabel.BackgroundTransparency = 1
 
@@ -925,6 +936,18 @@ local function canTarget(player)
 
     end
 
+    if ForceFieldCheckEnabled then
+
+        local character = player.Character
+
+        if character and character:FindFirstChildOfClass("ForceField") then
+
+            return false
+
+        end
+
+    end
+
     return true
 
 end
@@ -1088,6 +1111,10 @@ local function updateUI()
 
     FriendToggleBtn.TextColor3 = FriendCheckEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
 
+    ForceFieldToggleBtn.Text = "ForceField Check: " .. (ForceFieldCheckEnabled and "ON" or "OFF")
+
+    ForceFieldToggleBtn.TextColor3 = ForceFieldCheckEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+
     StatusLabel.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
 
     StatusLabel.TextColor3 = AimbotEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
@@ -1224,6 +1251,17 @@ end)
 FriendToggleBtn.MouseButton1Click:Connect(function()
 
     FriendCheckEnabled = not FriendCheckEnabled
+
+    saveConfig()
+
+    updateUI()
+
+end)
+
+
+ForceFieldToggleBtn.MouseButton1Click:Connect(function()
+
+    ForceFieldCheckEnabled = not ForceFieldCheckEnabled
 
     saveConfig()
 
