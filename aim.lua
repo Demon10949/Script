@@ -190,7 +190,7 @@ local function showLoadNotification()
 
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
 
-    label.Text = " aim bot by @sunglowez "
+    label.Text = "aim bot by @sunglowez "
 
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
 
@@ -773,24 +773,18 @@ local function rebuildESPParts(player, data)
 
     end
 
-    for _, part in ipairs(data.Character:GetDescendants()) do
-
-        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-
-            local highlight = Instance.new("Highlight")
-            highlight.Name = "ESPPart"
-            highlight.Adornee = part
-            highlight.FillTransparency = 0.72
-            highlight.OutlineTransparency = 0
-            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            highlight.FillColor = getESPColor(player)
-            highlight.OutlineColor = getESPColor(player)
-            highlight.Parent = part
-            table.insert(data.Highlights, highlight)
-
-        end
-
-    end
+    local color = getESPColor(player)
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Player"
+    highlight.Adornee = data.Character
+    highlight.FillColor = color
+    highlight.OutlineColor = color
+    highlight.FillTransparency = 0.25
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Enabled = true
+    highlight.Parent = workspace
+    table.insert(data.Highlights, highlight)
 
 end
 
