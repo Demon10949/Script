@@ -268,7 +268,7 @@ Title.Size = UDim2.new(1, -35, 0, 35)
 
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 
-Title.Text = " owner @sunglowez "
+Title.Text = " aim bot "
 
 Title.TextColor3 = Color3.fromRGB(0, 153, 255)
 
@@ -1293,15 +1293,27 @@ CloseButton.MouseButton1Click:Connect(function()
 
     end
 
-    for _, box in pairs(espBoxes) do
+    for _, data in pairs(espBoxes) do
 
-        box:Remove()
+        if data.Highlights then
+
+            for _, highlight in ipairs(data.Highlights) do
+
+                pcall(function() highlight:Destroy() end)
+
+            end
+
+        end
 
     end
 
     espBoxes = {}
 
-    ScreenGui:Destroy()
+    if ScreenGui and ScreenGui.Parent then
+
+        ScreenGui:Destroy()
+
+    end
 
     script:Destroy()
 
