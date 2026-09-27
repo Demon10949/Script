@@ -92,8 +92,16 @@ local TeamCheckEnabled = Config.TeamCheckEnabled
 
 local FriendCheckEnabled = Config.FriendCheckEnabled
 local ForceFieldCheckEnabled = Config.ForceFieldCheckEnabled
+if ForceFieldCheckEnabled == nil then
+    ForceFieldCheckEnabled = true
+end
 
-local FovRadius = math.clamp(tonumber(Config.FovRadius) or 200, 10, 600)
+local SavedFovRadius = math.clamp(tonumber(Config.FovRadius) or 200, 10, 600)
+local FovRadius = SavedFovRadius
+local FovCircleVisible = Config.FovCircleVisible ~= false
+if CursorMagnetEnabled then
+    FovRadius = 90
+end
 
 local TargetPart = Config.TargetPart
 
@@ -138,7 +146,8 @@ local function saveConfig()
     Config.FriendCheckEnabled = FriendCheckEnabled
     Config.ForceFieldCheckEnabled = ForceFieldCheckEnabled
 
-    Config.FovRadius = FovRadius
+    Config.FovRadius = CursorMagnetEnabled and SavedFovRadius or FovRadius
+    Config.FovCircleVisible = FovCircleVisible
 
     Config.TargetPart = TargetPart
 
@@ -190,7 +199,7 @@ local function showLoadNotification()
 
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
 
-    label.Text = "aim bot by @sunglowez "
+    label.Text = "Aim Bot By @sunglowez"
 
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
 
@@ -524,6 +533,15 @@ ForceFieldToggleBtn.BorderColor3 = Color3.fromRGB(0, 102, 204)
 ForceFieldToggleBtn.Font = Enum.Font.SourceSansBold
 ForceFieldToggleBtn.TextSize = 14
 ForceFieldToggleBtn.Parent = MainFrame
+
+local FovCircleToggleBtn = Instance.new("TextButton")
+FovCircleToggleBtn.Size = UDim2.new(0, 120, 0, 25)
+FovCircleToggleBtn.Position = UDim2.new(0, 145, 0, 275)
+FovCircleToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+FovCircleToggleBtn.BorderColor3 = Color3.fromRGB(0, 102, 204)
+FovCircleToggleBtn.Font = Enum.Font.SourceSansBold
+FovCircleToggleBtn.TextSize = 14
+FovCircleToggleBtn.Parent = MainFrame
 
 local InfoLabel = Instance.new("TextLabel")
 
@@ -972,13 +990,23 @@ local function getBestTarget()
 
     local lowestHealth = math.huge
 
-    local screenCenter = Vector2.new(
+    local screenCenter
 
-        Camera.ViewportSize.X / 2,
+    if AimbotEnabled and CursorMagnetEnabled then
 
-        Camera.ViewportSize.Y / 2
+        screenCenter = UserInputService:GetMouseLocation()
 
-    )
+    else
+
+        screenCenter = Vector2.new(
+
+            Camera.ViewportSize.X / 2,
+
+            Camera.ViewportSize.Y / 2
+
+        )
+
+    end
 
     for _, player in ipairs(Players:GetPlayers()) do
 
@@ -1078,6 +1106,10 @@ local function updateUI()
     FovLabel.Text = "FOV: " .. FovRadius
 
     FOVDrawing.Radius = FovRadius
+    FOVDrawing.Visible = FovCircleVisible
+
+    FovCircleToggleBtn.Text = "FOV Circle: " .. (FovCircleVisible and "ON" or "OFF")
+    FovCircleToggleBtn.TextColor3 = FovCircleVisible and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
 
     TargetLabel.Text = "Target: " .. TargetPart
 
@@ -1192,9 +1224,8 @@ AimbotToggleBtn.MouseButton1Click:Connect(function()
     AimbotEnabled = not AimbotEnabled
 
     if not AimbotEnabled then
-
         CursorMagnetEnabled = false
-
+        FovRadius = SavedFovRadius
     end
 
     saveConfig()
@@ -1212,6 +1243,13 @@ CursorToggleBtn.MouseButton1Click:Connect(function()
     else
 
         CursorMagnetEnabled = not CursorMagnetEnabled
+
+        if CursorMagnetEnabled then
+            SavedFovRadius = FovRadius
+            FovRadius = 90
+        else
+            FovRadius = SavedFovRadius
+        end
 
     end
 
@@ -1263,6 +1301,16 @@ ForceFieldToggleBtn.MouseButton1Click:Connect(function()
 
 end)
 
+FovCircleToggleBtn.MouseButton1Click:Connect(function()
+
+    FovCircleVisible = not FovCircleVisible
+
+    saveConfig()
+
+    updateUI()
+
+end)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
     if gameProcessed then
@@ -1280,9 +1328,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         AimbotEnabled = not AimbotEnabled
 
         if not AimbotEnabled then
-
             CursorMagnetEnabled = false
-
+            FovRadius = SavedFovRadius
         end
 
         saveConfig()
@@ -1292,17 +1339,20 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Enum.KeyCode.F3 then
 
         if AimbotEnabled then
-
             CursorMagnetEnabled = not CursorMagnetEnabled
 
+            if CursorMagnetEnabled then
+                SavedFovRadius = FovRadius
+                FovRadius = 90
+            else
+                FovRadius = SavedFovRadius
+            end
         else
-
             CursorMagnetEnabled = false
-
+            FovRadius = SavedFovRadius
         end
 
         saveConfig()
-
         updateUI()
 
     end
@@ -1359,13 +1409,21 @@ renderConnection = RunService.RenderStepped:Connect(function()
 
     if FOVDrawing then
 
-        FOVDrawing.Position = Vector2.new(
+        if AimbotEnabled and CursorMagnetEnabled then
 
-            Camera.ViewportSize.X / 2,
+            FOVDrawing.Position = UserInputService:GetMouseLocation()
 
-            Camera.ViewportSize.Y / 2
+        else
 
-        )
+            FOVDrawing.Position = Vector2.new(
+
+                Camera.ViewportSize.X / 2,
+
+                Camera.ViewportSize.Y / 2
+
+            )
+
+        end
 
     end
 
