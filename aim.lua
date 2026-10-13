@@ -113,7 +113,7 @@ local function saveConfig()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UltraAimbotMenuGui"
+ScreenGui.Name = "Aim Bot"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -131,7 +131,7 @@ local function showLoadNotification()
     label.BackgroundTransparency = 0.05
     label.BorderSizePixel = 1
     label.BorderColor3 = Color3.fromRGB(0, 153, 255)
-    label.Text = "Ultra Aimbot loaded"
+    label.Text = "Script by @sunglowez"
     label.TextColor3 = Color3.fromRGB(235, 235, 235)
     label.Font = Enum.Font.SourceSansBold
     label.TextSize = 17
